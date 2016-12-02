@@ -1,6 +1,3 @@
-# Lazy Buttons 2
-# Demonstrates using a class with Tkinter
-
 from Tkinter import *
 import threading
 import os
