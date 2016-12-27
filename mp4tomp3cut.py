@@ -6,19 +6,22 @@ class RollCase(object):
         self.sourceFile = sourceFile
         self.targetDir = targetDir
 
-        self.sourceFile = ("/home/user/python/11.mp4")
-        self.targetDir = ("/home/user/python/")
+        #self.sourceFile = ("/home/user/python/11.mp4")
+        #self.targetDir = ("/home/user/python/")
         #self.cuttingFile = ("/home/user/python/how_cutting")        
         
         self.info = info
         self.q = Queue()
     
-    def setCuttingFile(self,data_c):
-        self.cuttingFile = data_c
+    def refreshPaths(self,sourceFile,targetDir,cuttingFile):
+        self.cuttingFile = cuttingFile
+        self.sourceFile = sourceFile
+        self.targetDir = targetDir
         self.checkIsExists()
-        return True        
-    
-    def checkIsExists(self):
+        
+    def checkIsExists(self,sourceFile=False, targetDir=False,cuttingFile=False):
+        if sourceFile!=False and targetDir!=False and cuttingFile!=False:
+            self.refreshPaths(sourceFile,targetDir,cuttingFile)
         error = "error\n"
         if self.checkfile(self.sourceFile):
             pass
@@ -45,7 +48,6 @@ class RollCase(object):
             return False
 
     def prepareTask(self):
-        print self.cuttingFile
         import re, os
         import ffmpy
         maker = []
@@ -57,12 +59,11 @@ class RollCase(object):
             result = re.findall('\d{,2}:*\d{,2}:\d{,2}', track)
             if result!=None and result!=[]:
                 start_time = self.secondsCreate(result[0])
-                maker.append([{"start_time":result[0],"track_name":(str(tr)+"."+re.findall("[^\d{,2}.]",([x for x in track.split(result[0]) if x][0][:-2]))[0]+str(".mp3")),"track_lenght":"0"}])
+                maker.append([{"start_time":result[0],"track_name":str(tr)+"."+([x for x in track.split(result[0]) if x][0][:-2])+str(".mp3"),"track_lenght":"0"}])
                 tr += 1
                 if start_time!=0:
                     maker[len(maker)-2][0]['track_lenght'] = self.tracktimeCreate(int(start_time) - int(self.secondsCreate(maker[len(maker)-2][0]['start_time'])))
                     maker[len(maker)-1][0]['track_lenght'] = self.tracktimeCreate(int(full_lenght) - int(self.secondsCreate(maker[len(maker)-1][0]['start_time'])))
-        print maker
         return maker
     
     def checkfile(self,file_path):
@@ -80,6 +81,18 @@ class RollCase(object):
         m, s = divmod(seconds, 60)
         h, m = divmod(m, 60)
         return "%d:%02d:%02d" % (h, m, s)
+    
+    def addTarget(self,target):
+        import os
+        if self.checkfile(target)==True:
+            try:
+                os.remove(target)
+                return True
+            except:
+                self.info.insert("cant add task "+target+"\n")
+                return False
+        else:
+            return True
         
     def worker(self):
         while True:
@@ -97,24 +110,33 @@ class RollCase(object):
             inputs={source: cmd},
             outputs={target: None }
         )
-        tmp_text = song_name + " started...\n"
-        self.info.insert(tmp_text)
+        self.info.find_and_set(song_name + " waiting...\n", song_name + " started\n")
         ff.run()
-        self.info.find_and_set(tmp_text, song_name + " done\n")
+        self.info.find_and_set(song_name + " started\n", song_name + " done\n")
     
     def cutInThread(self):
         import threading
+        from datetime import datetime
+        self.info.clear()
+        self.info.insert("jobs started at "+str(datetime.strftime(datetime.now(), "%Y.%m.%d %H:%M:%S")+"\n"))
         for task in self.prepareTask():
-            cmd = "-loglevel quiet -ss "+task[0]['start_time']+" -t "+task[0]['track_lenght']
             target = self.targetDir + "/"+task[0]['track_name']
+            if self.addTarget(target):
+                pass
+            else:
+                continue
+            cmd = "-loglevel quiet -ss "+task[0]['start_time']+" -t "+task[0]['track_lenght']
             song_name = task[0]['track_name']
             put_task = [self.sourceFile,target,cmd,song_name,song_name]
+            self.info.insert(song_name + " waiting...\n")
             self.q.put(put_task)
         for i in range(4):
             thread = threading.Thread(target=self.worker)
             thread.daemon = True 
             thread.start()
             
-    def startConverting(self):
+    def startConverting(self,sourceFile=False, targetDir=False,cuttingFile=False):
+        if sourceFile!=False and targetDir!=False and cuttingFile!=False:
+            self.refreshPaths(sourceFile,targetDir,cuttingFile)
         if self.checkIsExists()==True:
             self.cutInThread()

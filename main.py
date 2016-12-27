@@ -4,6 +4,7 @@ import os
 from ffmpy import FFmpeg
 import time
 import mp4tomp3cut
+import flactomp3cut
 import flactomp3
 
 class Application(object):
@@ -51,16 +52,19 @@ class MainFrame(Frame):
         self.sourcePath = os.getcwd()
         self.cueFile = os.getcwd()
         self.resultPath = os.getcwd()
+        self.sourceDir = os.getcwd()
+        
         #self.resultPath = os.getcwd()
-        self.frame1 = Button(text = "flac to mp3 cut", command = lambda: self.flackTrackToMP3())
-        self.frame2 = Button(text = "mp4 to mp3 cut", command = lambda: self.trackMP4ToMP3())
+        self.frame1 = Button(text = "flac to mp3 cut", command = lambda: self.flackTrackToMP3cut())
+        self.frame3 = Button(text = "flac to mp3", command = lambda: self.flackTrackToMP3())
+        self.frame2 = Button(text = "mp4 to mp3 cut", command = lambda: self.trackMP4ToMP3())        
         self.frame1.grid()
         self.frame2.grid()
+        self.frame3.grid()
         self.text_area = Text(self, width = 100, height = 20, wrap = WORD)
         self.text_area.grid()
         self.refresh()
-        self.grid()
-        
+        self.grid()        
         
     def refresh(self):
         self.text_area.delete('1.0', END)
@@ -81,8 +85,9 @@ class MainFrame(Frame):
     def trackMP4ToMP3(self):
         self.cue_area = Text(self,width=100,height=20)
         self.cue_area.grid()
-        self.frame1.configure(state=NORMAL)
+        self.frame1.configure(state=DISABLED)
         self.frame2.configure(state=DISABLED)
+        self.frame3.configure(state=DISABLED)
         try:            
             self.title1.destroy()
             self.title2.destroy()
@@ -110,18 +115,16 @@ class MainFrame(Frame):
         self.bttn3 = Button(text = "dir ", command = lambda: self.opendir("result -",self.title3,"self.resultPath"))
         self.bttn3.grid()
         
-        self.check_button = Button(text = "check", command = lambda: case.checkIsExists())
+        self.check_button = Button(text = "check", command = lambda: case.checkIsExists(self.sourcePath, self.resultPath,self.cue_area.get("1.0",END)))
         self.check_button.grid()
         
-        self.check_button = Button(text = "upload cue", command = lambda: case.setCuttingFile(self.cue_area.get("1.0",END)))
-        self.check_button.grid()
-        
-        self.start_button = Button(text = "start", command = lambda: case.startConverting())
+        self.start_button = Button(text = "start", command = lambda: case.startConverting(self.sourcePath, self.resultPath,self.cue_area.get("1.0",END)))
         self.start_button.grid()
         
-    def flackTrackToMP3(self):
+    def flackTrackToMP3cut(self):
         self.frame1.configure(state=DISABLED)
-        self.frame2.configure(state=NORMAL)
+        self.frame2.configure(state=DISABLED)
+        self.frame3.configure(state=DISABLED)
         try:            
             self.title1.destroy()
             self.title2.destroy()
@@ -133,7 +136,7 @@ class MainFrame(Frame):
         except:
             pass        
         #case = flactomp3.RollCase(self.sourcePath, self.resultPath, self.cueFile, textInfo)
-        case = flactomp3.RollCase(self.sourcePath, self.resultPath, self.cue_area, textInfo)       
+        case = flactomp3cut.RollCase(self.sourcePath, self.resultPath, self.cueFile, textInfo)       
         
         self.main_title = Label(self, text = "cutting Flac to MP3")
         self.main_title.grid()        
@@ -154,10 +157,47 @@ class MainFrame(Frame):
         self.bttn3 = Button(text = "dir ", command = lambda: self.opendir("result -",self.title3,"self.resultPath"))
         self.bttn3.grid()
         
-        self.check_button = Button(text = "check", command = lambda: case.checkIsExists())
+        self.check_button = Button(text = "check", command = lambda: case.checkIsExists(self.sourcePath, self.resultPath, self.cueFile))
         self.check_button.grid()
         
-        self.start_button = Button(text = "start", command = lambda: case.startConverting())
+        self.start_button = Button(text = "start", command = lambda: case.startConverting(self.sourcePath, self.resultPath, self.cueFile))
+        self.start_button.grid()
+        
+    def flackTrackToMP3(self):
+        self.frame1.configure(state=DISABLED)
+        self.frame2.configure(state=DISABLED)
+        self.frame3.configure(state=DISABLED)
+        try:            
+            self.title1.destroy()
+            self.title2.destroy()
+            self.title3.destroy()
+        
+            self.bttn1.destroy()
+            self.bttn2.destroy()
+            self.bttn3.destroy()
+        except:
+            pass        
+
+        case = flactomp3.RollCase(self.sourceDir, self.resultPath, textInfo)       
+        
+        self.main_title = Label(self, text = "Flac to MP3")
+        self.main_title.grid()        
+        
+        self.title1 = Label(self, text = "source dir - " + self.sourceDir)
+        self.title1.grid()
+        
+        self.bttn1 = Button(text = "source open", command = lambda: self.opendir("source dir - ",self.title1,"self.sourceDir"))
+        self.bttn1.grid()
+       
+        self.title3 = Label(self, text = "result -"+self.resultPath)
+        self.title3.grid()
+        self.bttn3 = Button(text = "dir ", command = lambda: self.opendir("result -",self.title3,"self.resultPath"))
+        self.bttn3.grid()
+        
+        self.check_button = Button(text = "check", command = lambda: case.checkIsExists(self.sourceDir, self.resultPath))
+        self.check_button.grid()
+        
+        self.start_button = Button(text = "start", command = lambda: case.startConverting(self.sourceDir, self.resultPath))
         self.start_button.grid()
 
 
@@ -177,6 +217,9 @@ class MainFrame(Frame):
         thing["text"] = info + tmp_req
         if type_v == "self.resultPath":
             self.resultPath = tmp_req
+        if type_v == "self.sourceDir":
+            self.sourceDir = tmp_req
+            print tmp_req
         return True
         
 def main():
