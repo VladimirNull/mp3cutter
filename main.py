@@ -11,7 +11,7 @@ class Application(object):
     def __init__(self,title,geometry):
         self.root = Tk()
         self.root.title(title)
-        self.root.geometry(geometry)
+        #self.root.geometry(geometry)
         self.app1 = MainFrame(self.root)
         self.app1.mainloop()
         
@@ -99,7 +99,7 @@ class MainFrame(Frame):
         except:
             pass
         
-        case = mp4tomp3cut.RollCase(self.sourcePath, self.resultPath, textInfo)
+        case = mp4tomp3cut.RollCase(self.sourcePath, self.resultPath, self.cueFile, textInfo)
         
         self.main_title = Label(self, text = "cutting MP4 to MP3")
         self.main_title.grid()        
@@ -110,15 +110,20 @@ class MainFrame(Frame):
         self.bttn1 = Button(text = "source open", command = lambda: self.openfile("source file - ",self.title1,"self.sourcePath"))
         self.bttn1.grid()
         
+        self.title2 = Label(self, text = "cue file - "+self.cueFile)
+        self.title2.grid()
+        self.bttn2 = Button(text = "cue file", command = lambda: self.openfile("cue file - ",self.title2,"self.cueFile"))
+        self.bttn2.grid()
+        
         self.title3 = Label(self, text = "result -"+self.resultPath)
         self.title3.grid()
         self.bttn3 = Button(text = "dir ", command = lambda: self.opendir("result -",self.title3,"self.resultPath"))
         self.bttn3.grid()
         
-        self.check_button = Button(text = "check", command = lambda: case.checkIsExists(self.sourcePath, self.resultPath,self.cue_area.get("1.0",END)))
+        self.check_button = Button(text = "check", command = lambda: case.checkIsExists(self.sourcePath, self.resultPath,self.cueFile))
         self.check_button.grid()
         
-        self.start_button = Button(text = "start", command = lambda: case.startConverting(self.sourcePath, self.resultPath,self.cue_area.get("1.0",END)))
+        self.start_button = Button(text = "start", command = lambda: case.startConverting(self.sourcePath, self.resultPath,self.cueFile))
         self.start_button.grid()
         
     def flackTrackToMP3cut(self):
@@ -143,7 +148,6 @@ class MainFrame(Frame):
         
         self.title1 = Label(self, text = "source file - " + self.sourcePath)
         self.title1.grid()
-        
         self.bttn1 = Button(text = "source open", command = lambda: self.openfile("source file - ",self.title1,"self.sourcePath"))
         self.bttn1.grid()
         
@@ -203,7 +207,8 @@ class MainFrame(Frame):
 
     def openfile(self,info, thing, type_v):
         import tkFileDialog as filedialog
-        tmp_req = str(filedialog.askopenfile().name)
+        #print filedialog.askopenfile().name
+        tmp_req = str(filedialog.askopenfile().name.encode('utf-8'))
         thing["text"] = info+str(tmp_req)
         if type_v == "self.cueFile":
             self.cueFile = tmp_req
@@ -213,13 +218,12 @@ class MainFrame(Frame):
     
     def opendir(self,info,thing,type_v):
         import tkFileDialog as filedialog
-        tmp_req = str(filedialog.askdirectory())
+        tmp_req = str(filedialog.askdirectory().encode('utf-8'))
         thing["text"] = info + tmp_req
         if type_v == "self.resultPath":
             self.resultPath = tmp_req
         if type_v == "self.sourceDir":
             self.sourceDir = tmp_req
-            print tmp_req
         return True
         
 def main():
